@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using static UnityEngine.ParticleSystem;
 
@@ -42,12 +43,23 @@ public class CubeController : MonoBehaviour
     [SerializeField]
     [Tooltip("time between momentum decay ticks")]
     private float momentumDecayTime = 2f;
+    [SerializeField]
+    private LineRenderer tentacleRenderer;
+    [SerializeField]
+    private SpringJoint2D tentaclejoint;
+    [SerializeField]
+    private Transform tentacaleAnchor;
+    [SerializeField]
+    private float tentacleRange = 10f;
+    [SerializeField]
+    private float tentacleLaunchTime = 0.5f;
 
-    private RaycastHit2D[] tempSphereCastHits = new RaycastHit2D[10];
+    private RaycastHit2D[] tempPhysicsCastHits = new RaycastHit2D[10];
     private Vector2 lastCollisionPoint;
     private Vector2 lastCollisionCenter;
     private Vector2? closestCollision;
     private Vector2? closestCollisionCenter;
+    private bool tentacleConnected;
     private bool chargingBounce;
     private bool inTapRange;
     private bool inPerfectTapRange;
@@ -81,7 +93,7 @@ public class CubeController : MonoBehaviour
     void Update()
     {
         inputManager.ProcessInput();
-        GetClosestCollision();
+        /*GetClosestCollision();
         indicatorRadius = goodReactionRadius * (1f - 0.5f * momentum / (maxMomentum));
         var perfectRangeRadius = 0.33f * indicatorRadius * (1f - 0.5f * momentum / (maxMomentum));
         if (closestCollision.HasValue || Vector2.Distance( lastCollisionCenter, rb.position ) <= indicatorRadius)
@@ -105,9 +117,14 @@ public class CubeController : MonoBehaviour
             inTapRange = false;
             inRangeIndicator.gameObject.SetActive( false );
             collisionHandled = false;
+        }*/
+
+        if (tentacleConnected)
+        {
+            tentacleRenderer.SetPosition( 0, rb.position );
         }
 
-        if (inputManager.PointerHeld && inputManager.Delta.HasValue && arrow)
+        /*if (inputManager.PointerHeld && inputManager.Delta.HasValue && arrow)
         {
             arrow.SetRot( inputManager.Delta.Value );
             arrow.gameObject.SetActive( true );
@@ -115,7 +132,7 @@ public class CubeController : MonoBehaviour
         else if (arrow)
         {
             arrow.gameObject.SetActive( false );
-        }
+        }*/
 
         momentumDecayTimer += Time.deltaTime;
         if (momentumDecayTimer >= momentumDecayTime)
@@ -132,14 +149,71 @@ public class CubeController : MonoBehaviour
 
     }
 
+    IEnumerator launchTentacle(Vector2 targetPos, bool hit )
+    {
+        float startTime = Time.time;
+        float time = Time.time - startTime;
+        float distanceBias = Mathf.Min(Vector2.Distance( targetPos, rb.position ) / tentacleRange, 1f);
+        tentacleRenderer.enabled = true;
+        while (time < tentacleLaunchTime * distanceBias)
+        {
+            var positions = new Vector3[] { rb.position, Vector2.Lerp(rb.position, targetPos, time / (tentacleLaunchTime * distanceBias) ) };
+            tentacleRenderer.SetPositions( positions );
+
+            yield return new WaitForEndOfFrame();
+            time = Time.time - startTime ;
+        }
+
+        if (hit)
+        {
+            var positions = new Vector3[] { rb.position, targetPos };
+            tentacleRenderer.SetPositions( positions );
+            tentacleConnected = true;
+            tentacaleAnchor.position = targetPos;
+            tentaclejoint.enabled = true;
+        }
+        else
+        {
+            tentacleRenderer.enabled = false;
+        }
+
+    }
+
     private void OnPointerFirstheld( Vector3 pos )
     {
-        SetTimeScale( timeSlowMod );
+        Vector2 tentacleDirection;
+        if (rb.velocity.x >= 0)
+        {
+            tentacleDirection = new Vector2( -1f, 1.5f );
+        }
+        else
+        {
+            tentacleDirection = new Vector2( 1f, 1.5f );
+        }
+        //var tentacleDirection = (Camera.main.ScreenToWorldPoint( pos ) - transform.position).normalized;
+        var tentacleHit = GetRaycastHitPoint( tentacleDirection, tentacleRange );
+        tentacleRenderer.positionCount = 2;
+        StartCoroutine( launchTentacle( tentacleHit ?? Camera.main.ScreenToWorldPoint( pos ), tentacleHit.HasValue ) );
+
+        /*var positions = new Vector3[] {rb.position, tentacaleHit.Value};
+        tentacaleAnchor.position = tentacaleHit.Value;
+        tentacleRenderer.SetPositions( positions );
+        tentacleRenderer.enabled = true;
+        if (!tentacaleHit.HasValue) return;
+        tentaclejoint.enabled = true;*/
+        //SetTimeScale( timeSlowMod );
     }
 
     private void OnPointerUp( Vector3 pos )
     {
         if (inputManager.PointerHeld)
+        {
+            tentacleConnected = false;
+            tentacleRenderer.enabled = false;
+            tentaclejoint.enabled = false;
+            StopAllCoroutines();
+        }
+        /*if (inputManager.PointerHeld)
         {
             SetTimeScale( 1f );
             rb.velocity = Vector2.zero;
@@ -149,10 +223,10 @@ public class CubeController : MonoBehaviour
         else if(inTapRange && !collisionHandled)
         {
             HandleTap( closestCollisionCenter.HasValue ? closestCollisionCenter.Value : lastCollisionCenter);
-        }
+        }*/
     }
 
-    private void HandleTap(Vector2 collisionPoint)
+    /*private void HandleTap(Vector2 collisionPoint)
     {
         bool perfectTap = false;
         collisionHandled = true;
@@ -180,11 +254,19 @@ public class CubeController : MonoBehaviour
                 particlesMain.startColor = boost1Color;
             momentumParticles.Play();
         }
-    }
+    }*/
     private void OnCollisionEnter2D( Collision2D collision )
     {
         if (collisionMask != (collisionMask | (1 << collision.gameObject.layer)))
             return;
+
+        if (inputManager.PointerHeld)
+        {
+            tentacleConnected = false;
+            tentacleRenderer.enabled = false;
+            tentaclejoint.enabled = false;
+            StopAllCoroutines();
+        }
 
         Vector2 newVelocity;
         if (collision.gameObject.CompareTag( "RightWall" ))
@@ -215,13 +297,13 @@ public class CubeController : MonoBehaviour
     {
         if(rb.velocity != Vector2.zero)
         {
-            var hits = Physics2D.CircleCastNonAlloc( rb.position, colliderRadius, rb.velocity.normalized, tempSphereCastHits, sensorRange, collisionMask );
+            var hits = Physics2D.CircleCastNonAlloc( rb.position, colliderRadius, rb.velocity.normalized, tempPhysicsCastHits, sensorRange, collisionMask );
             if(hits > 0)
             {
-                if (tempSphereCastHits[0].collider)
+                if (tempPhysicsCastHits[0].collider)
                 {
-                    closestCollision = tempSphereCastHits[0].point;
-                    closestCollisionCenter = closestCollision + tempSphereCastHits[0].normal * colliderRadius;
+                    closestCollision = tempPhysicsCastHits[0].point;
+                    closestCollisionCenter = closestCollision + tempPhysicsCastHits[0].normal * colliderRadius;
                     return;
                 }
             }
@@ -230,6 +312,19 @@ public class CubeController : MonoBehaviour
         closestCollisionCenter = null;
     }
 
+    private Vector2? GetRaycastHitPoint(Vector2 direction, float range)
+    {
+        Debug.DrawRay( rb.position, direction * range );
+        var hits = Physics2D.RaycastNonAlloc( rb.position, direction, tempPhysicsCastHits, range, collisionMask );
+        if (hits > 0)
+        {
+            if (tempPhysicsCastHits[0].collider)
+            {
+                return tempPhysicsCastHits[0].point;
+            }
+        }
+        return null;
+    }
     private void OnDrawGizmos()
     {
         Debug.DrawRay( rb.position, rb.velocity.normalized * Mathf.Clamp( sensorRange * rb.velocity.magnitude / 30, 2f, 5f ) );
