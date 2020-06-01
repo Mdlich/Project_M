@@ -8,6 +8,7 @@ TagManager:
   - Tiles
   - RightWall
   - CubeDetector
+  - Obstacle
   layers:
   - Default
   - TransparentFX
@@ -21,7 +22,7 @@ TagManager:
   - Cube
   - Wall
   - CubeDetector
-  - 
+  - Spikes
   - 
   - 
   - 

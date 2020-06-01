@@ -12,6 +12,8 @@ public class LaserController : MonoBehaviour
     [SerializeField]
     private float minSpeedMod = 0.5f;
     [SerializeField]
+    private float maxSpeedMod = 10f;
+    [SerializeField]
     private float difficultyMod = .001f;
 
     private float currentSpeed;
@@ -23,7 +25,7 @@ public class LaserController : MonoBehaviour
     {
         var camDistance = Camera.main.transform.position.y - transform.position.y;
         currentSpeed = Camera.main.transform.position.y / (Time.time + 0.01f);
-        currentSpeed *= Mathf.Clamp(camDistance / balanceDistance, minSpeedMod, float.PositiveInfinity);
+        currentSpeed *= Mathf.Clamp(camDistance / balanceDistance, minSpeedMod, maxSpeedMod);
         currentSpeed *= 1f + Camera.main.transform.position.y * difficultyMod;
         transform.position += new Vector3( 0, currentSpeed * Time.deltaTime );
     }

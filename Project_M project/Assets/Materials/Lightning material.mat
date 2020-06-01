@@ -10,7 +10,8 @@ Material:
   m_Name: Lightning material
   m_Shader: {fileID: -6465566751694194690, guid: 065caceae468044459b60dc0427fa718,
     type: 3}
-  m_ShaderKeywords: _ENVIRONMENTREFLECTIONS_OFF _RECEIVE_SHADOWS_OFF _SPECULARHIGHLIGHTS_OFF
+  m_ShaderKeywords: ETC1_EXTERNAL_ALPHA _ENVIRONMENTREFLECTIONS_OFF _RECEIVE_SHADOWS_OFF
+    _SPECULARHIGHLIGHTS_OFF
   m_LightmapFlags: 6
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
