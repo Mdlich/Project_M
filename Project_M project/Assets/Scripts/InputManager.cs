@@ -43,6 +43,9 @@ public class InputManager
 
     public void ProcessInput()
     {
+        if (GameManager.gamePaused)
+            return;
+
         if (pointerCurrentState == PointerState.Up || pointerCurrentState == PointerState.Idle)
         {
             if (GetPointerDown())
