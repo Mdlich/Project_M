@@ -8,6 +8,10 @@ TagManager:
   - Tiles
   - RightWall
   - CubeDetector
+  - Obstacle
+  - Debris
+  - SlimeSpore
+  - Lava
   layers:
   - Default
   - TransparentFX
@@ -21,7 +25,7 @@ TagManager:
   - Cube
   - Wall
   - CubeDetector
-  - 
+  - Spikes
   - 
   - 
   - 
@@ -51,11 +55,14 @@ TagManager:
   - name: rects
     uniqueID: 866611463
     locked: 0
-  - name: borders
-    uniqueID: 36007831
+  - name: Crystals
+    uniqueID: 793510193
     locked: 0
   - name: player
     uniqueID: 3255453269
+    locked: 0
+  - name: borders
+    uniqueID: 36007831
     locked: 0
   - name: GUI
     uniqueID: 1520499979
