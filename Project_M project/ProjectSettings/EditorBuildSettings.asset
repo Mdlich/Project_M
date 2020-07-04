@@ -6,6 +6,24 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Playground.unity
+    path: Assets/scenes/Main menu.unity
+    guid: 9496687ff928bd04ab6a96cc84a7d1d5
+  - enabled: 1
+    path: Assets/scenes/Amethyst cave.unity
     guid: e50961eb7dbfd464ca8451918e147c11
+  - enabled: 1
+    path: Assets/scenes/Sapphire cave.unity
+    guid: 88d14753c224f5043a20a1c4deb48b67
+  - enabled: 1
+    path: Assets/scenes/Emerald Cave.unity
+    guid: 32434cf93eecece479bda5868cf514df
+  - enabled: 1
+    path: Assets/scenes/Amethyst cave deathmatch.unity
+    guid: 1130ecaa49650c5479b4eef94df3674d
+  - enabled: 1
+    path: Assets/scenes/Sapphire cave deathmatch.unity
+    guid: e17e17fc86285484db554611c397de52
+  - enabled: 1
+    path: Assets/scenes/Emerald Cave deathmatch.unity
+    guid: 851873db3d4067848a2274c2a0286879
   m_configObjects: {}

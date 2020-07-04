@@ -11,20 +11,20 @@ public class Parallax : MonoBehaviour
 
     void Start()
     {
-        cameraTransform = Camera.main.transform;
+        cameraTransform = GameObject.FindGameObjectWithTag( "VirtualCamera" ).transform;
         lastCameraPos = cameraTransform.position;
         SpriteRenderer renderer = GetComponent<SpriteRenderer>();
         Sprite sprite = renderer.sprite;
         textureunitSize = sprite.bounds.size.y;
     }
 
-    void Update()
+    private void FixedUpdate()
     {
         var deltaMovement = cameraTransform.position - lastCameraPos;
         transform.position += deltaMovement * parallaxMult;
         lastCameraPos = cameraTransform.position;
 
-        if(Mathf.Abs(cameraTransform.position.y - transform.position.y) > textureunitSize)
+        if (Mathf.Abs( cameraTransform.position.y - transform.position.y ) > textureunitSize)
         {
             float offsetPosition = 0; // (cameraTransform.position.y - transform.position.y) % textureunitSize;
             var newPos = new Vector3( transform.position.x, cameraTransform.position.y + offsetPosition );

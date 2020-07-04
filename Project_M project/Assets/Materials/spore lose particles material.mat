@@ -10,7 +10,7 @@ Material:
   m_Name: spore lose particles material
   m_Shader: {fileID: -6465566751694194690, guid: 810ad9a48ff506f4eb583e1e21c55107,
     type: 3}
-  m_ShaderKeywords: _ALPHATEST_ON
+  m_ShaderKeywords: ETC1_EXTERNAL_ALPHA _ALPHATEST_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0

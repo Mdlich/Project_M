@@ -17,6 +17,8 @@ public class TimeMeter : MonoBehaviour
     void Update()
     {
         timer += Time.deltaTime;
-        lable.UpdateText( $"{Mathf.FloorToInt(timer)}" );
+        int minutes = (int)(timer / 60f);
+        int seconds = (int)(timer % 60f);
+        lable.UpdateText( $"{minutes}:{(seconds < 10 ? "0" : "")}{(int)(timer % 60f)}" );
     }
 }

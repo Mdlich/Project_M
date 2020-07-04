@@ -12,6 +12,9 @@ TagManager:
   - Debris
   - SlimeSpore
   - Lava
+  - SpawnablesPool
+  - FloatingCrystal
+  - VirtualCamera
   layers:
   - Default
   - TransparentFX
@@ -26,7 +29,7 @@ TagManager:
   - Wall
   - CubeDetector
   - Spikes
-  - 
+  - Player
   - 
   - 
   - 
@@ -49,21 +52,9 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: background
-    uniqueID: 573801119
+  - name: Obstacles
+    uniqueID: 2778502161
     locked: 0
-  - name: rects
-    uniqueID: 866611463
-    locked: 0
-  - name: Crystals
-    uniqueID: 793510193
-    locked: 0
-  - name: player
-    uniqueID: 3255453269
-    locked: 0
-  - name: borders
-    uniqueID: 36007831
-    locked: 0
-  - name: GUI
-    uniqueID: 1520499979
+  - name: Foreground
+    uniqueID: 413425395
     locked: 0

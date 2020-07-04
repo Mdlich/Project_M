@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 469c24fdb3bd6431b92cc1465bd9166b, type: 3}
+  m_Name: RemoteConfigDataStoreAsset
+  m_EditorClassIdentifier: 
+  configId: aafb2d7d-acf5-4e27-b40a-cfd11c9ed1f8
+  currentEnvironment: Default
+  currentEnvironmentId: b9b9938f-27df-4e7e-af1a-322a2f39be15
+  currentEnvironmentIsDefault: 1
+  addedRulesIDs: []
+  updatedRulesIDs: []
+  deletedRulesIDs: []
+  _rsKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"faacc82f-1799-40ab-aa83-4c0ee636fe39\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"MaxLavaSpeedLevel2\",\r\n      \"type\":
+    \"float\",\r\n      \"value\": 30.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\":
+    {\r\n      \"entityId\": \"4332bff6-c4db-4f03-89a6-cc6ec82cb1df\"\r\n    },\r\n   
+    \"rs\": {\r\n      \"key\": \"MaxLavaSpeedLevel3\",\r\n      \"type\": \"float\",\r\n     
+    \"value\": 30.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"2796d592-407b-4b4f-aa93-109d0a8a7a4a\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"LavaStartSpeedLevel1\",\r\n      \"type\": \"float\",\r\n      \"value\":
+    8.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"c4910ede-0665-4181-96c2-8458a00d25b8\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"LavaStartSpeedLevel2\",\r\n      \"type\":
+    \"float\",\r\n      \"value\": 8.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\":
+    {\r\n      \"entityId\": \"32adafc0-e3c3-417f-abb2-6b3dea6dde66\"\r\n    },\r\n   
+    \"rs\": {\r\n      \"key\": \"LavaStartSpeedLevel3\",\r\n      \"type\": \"float\",\r\n     
+    \"value\": 8.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"e5d53c02-753f-43ba-a2ba-88b85e787831\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"LavaMaxSpeedTime1\",\r\n      \"type\": \"float\",\r\n      \"value\":
+    180.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"1945bad2-ea51-49ea-a632-80cdde6da169\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"LavaMaxSpeedTime2\",\r\n      \"type\":
+    \"float\",\r\n      \"value\": 180.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\":
+    {\r\n      \"entityId\": \"d8c7eb98-aae6-47f5-be3b-d7789336e3d8\"\r\n    },\r\n   
+    \"rs\": {\r\n      \"key\": \"LavaMaxSpeedTime3\",\r\n      \"type\": \"float\",\r\n     
+    \"value\": 180.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"1975acf4-b5d7-4767-ad67-d7cd75054069\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"MaxLavaSpeedLevel1\",\r\n      \"type\": \"float\",\r\n      \"value\":
+    30.0\r\n    }\r\n  }\r\n]"
+  _rsLastCachedKeyList: "[\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"faacc82f-1799-40ab-aa83-4c0ee636fe39\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"MaxLavaSpeedLevel2\",\r\n      \"type\":
+    \"float\",\r\n      \"value\": 30.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\":
+    {\r\n      \"entityId\": \"4332bff6-c4db-4f03-89a6-cc6ec82cb1df\"\r\n    },\r\n   
+    \"rs\": {\r\n      \"key\": \"MaxLavaSpeedLevel3\",\r\n      \"type\": \"float\",\r\n     
+    \"value\": 30.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"2796d592-407b-4b4f-aa93-109d0a8a7a4a\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"LavaStartSpeedLevel1\",\r\n      \"type\": \"float\",\r\n      \"value\":
+    8.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"c4910ede-0665-4181-96c2-8458a00d25b8\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"LavaStartSpeedLevel2\",\r\n      \"type\":
+    \"float\",\r\n      \"value\": 8.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\":
+    {\r\n      \"entityId\": \"32adafc0-e3c3-417f-abb2-6b3dea6dde66\"\r\n    },\r\n   
+    \"rs\": {\r\n      \"key\": \"LavaStartSpeedLevel3\",\r\n      \"type\": \"float\",\r\n     
+    \"value\": 8.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"e5d53c02-753f-43ba-a2ba-88b85e787831\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"LavaMaxSpeedTime1\",\r\n      \"type\": \"float\",\r\n      \"value\":
+    180.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\": \"1945bad2-ea51-49ea-a632-80cdde6da169\"\r\n   
+    },\r\n    \"rs\": {\r\n      \"key\": \"LavaMaxSpeedTime2\",\r\n      \"type\":
+    \"float\",\r\n      \"value\": 180.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\":
+    {\r\n      \"entityId\": \"d8c7eb98-aae6-47f5-be3b-d7789336e3d8\"\r\n    },\r\n   
+    \"rs\": {\r\n      \"key\": \"LavaMaxSpeedTime3\",\r\n      \"type\": \"float\",\r\n     
+    \"value\": 180.0\r\n    }\r\n  },\r\n  {\r\n    \"metadata\": {\r\n      \"entityId\":
+    \"1975acf4-b5d7-4767-ad67-d7cd75054069\"\r\n    },\r\n    \"rs\": {\r\n     
+    \"key\": \"MaxLavaSpeedLevel1\",\r\n      \"type\": \"float\",\r\n      \"value\":
+    30.0\r\n    }\r\n  }\r\n]"
+  _environments: "[\r\n  {\r\n    \"projectId\": \"f44b5bca-334a-472b-87b8-f52fa8325d4d\",\r\n   
+    \"name\": \"Default\",\r\n    \"id\": \"b9b9938f-27df-4e7e-af1a-322a2f39be15\",\r\n   
+    \"createdAt\": \"2020-06-26T15:03:08Z\",\r\n    \"updatedAt\": \"2020-06-26T15:03:08Z\",\r\n   
+    \"isDefault\": true\r\n  },\r\n  {\r\n    \"projectId\": \"f44b5bca-334a-472b-87b8-f52fa8325d4d\",\r\n   
+    \"name\": \"Release\",\r\n    \"id\": \"5f7a86db-ba6d-42e9-9f2a-a148f3f8d4cb\",\r\n   
+    \"createdAt\": \"2020-06-26T15:07:35Z\",\r\n    \"updatedAt\": \"2020-06-26T15:07:35Z\",\r\n   
+    \"isDefault\": false\r\n  },\r\n  {\r\n    \"projectId\": \"f44b5bca-334a-472b-87b8-f52fa8325d4d\",\r\n   
+    \"name\": \"Development\",\r\n    \"id\": \"1174cf0e-906a-45f5-960b-9625a1f7af87\",\r\n   
+    \"createdAt\": \"2020-06-26T15:07:35Z\",\r\n    \"updatedAt\": \"2020-06-26T15:07:35Z\",\r\n   
+    \"isDefault\": false\r\n  }\r\n]"
+  _rulesList: '[]'
+  _lastCachedRulesList: '[]'

@@ -4,14 +4,15 @@ using UnityEngine;
 public class Spawnable : MonoBehaviour
 {
     protected Renderer renderer;
-    public Action<Spawnable> ReadyToPush;
+
+    protected float LasPosY => renderer.bounds.center.y + renderer.bounds.extents.y;
     private void Awake()
     {
         renderer = GetComponentInChildren<Renderer>();
     }
-    void Update()
+    protected virtual void Update()
     {
-        if (Camera.main.transform.position.y > transform.position.y && !renderer.isVisible)
+        if (Camera.main.transform.position.y - Camera.main.orthographicSize - SpawningSystem.DespawningDistance >= LasPosY)
         {
             ReturnToPool();
         }
@@ -19,14 +20,7 @@ public class Spawnable : MonoBehaviour
 
     public void ReturnToPool()
     {
-        ReadyToPush?.Invoke( this );
-    }
-
-    private void OnTriggerEnter2D( Collider2D collision )
-    {
-        if(collision.CompareTag( "Lava" ))
-        {
-            Invoke( "ReturnToPool", 1f );
-        }
+        gameObject.SetActive( false );
+        transform.SetParent( SpawningSystem.Pool.transform );
     }
 }

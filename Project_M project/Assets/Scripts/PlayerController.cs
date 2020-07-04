@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using static UnityEngine.ParticleSystem;
@@ -7,11 +8,19 @@ using static UnityEngine.ParticleSystem;
 public class PlayerController : MonoBehaviour
 {
     public static event Action<int> WallBounceEvent;
+    public static event Action<float, float> MomentumChangedEvent;
+    public static event Action ObstacleCollisionEvent;
+    public static event Action PickupEvent;
+    public static event Action<int> ShieldCountChangedEvent;
+
+    public static PlayerController instance;
 
     [SerializeField]
     private Rigidbody2D rb;
     [SerializeField]
-    private TextLable slimeSporeLable;
+    private TentacleManager tentaclesManager;
+    [SerializeField]
+    private GameObject shield;
     [SerializeField]
     private ParticleSystem gainSporeParticles;
     [SerializeField]
@@ -19,21 +28,45 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private LayerMask collisionMask;
     [SerializeField]
-    private float pointerHoldTime = 0.1f;
+    private TrailRenderer trail;
     [SerializeField]
     private LineRenderer tentacleRenderer;
     [SerializeField]
     private SpringJoint2D tentaclejoint;
     [SerializeField]
     private Transform tentacleAnchor;
+
+    [Space(20f)]
+    [SerializeField]
+    private bool tentacleRushAvailable;
+    [SerializeField]
+    private bool massOfTentaclesAvailable;
     [SerializeField]
     private float tentacleRange = 10f;
     [SerializeField]
     private float tentacleLaunchTime = 0.5f;
     [SerializeField]
-    private float averageVelocityTime = 5f;
-    [SerializeField]
     private float obstacleVelocityPenalty = 0.75f;
+    [SerializeField]
+    private float tentacleCooldown;
+    [SerializeField]
+    private float tentacleAngleMin = 0f;
+    [SerializeField]
+    private float tentacleAngleMax = 45f;
+    [SerializeField]
+    private float followPointerMod = 10f;
+    [SerializeField]
+    private float maxFreeVelocity = 20f;
+    [SerializeField]
+    private float massOfTentaclesCost = 0.2f;
+    [SerializeField]
+    private float momentumPenaltyOnDamage = 0.2f;
+    [SerializeField]
+    private float motTime = 5f;
+    [SerializeField]
+    private float tentacleRushCost = 0.1f;
+    [SerializeField]
+    private float motStartRange = 3f;
     [SerializeField]
     private Vector2 startingVelocity = new Vector2( 20, 10 );
     [SerializeField]
@@ -42,57 +75,277 @@ public class PlayerController : MonoBehaviour
     private Vector2 maxVelocity = new Vector2(10f, 50f);
     [SerializeField]
     private Vector2 minVelocity = new Vector2( 15f, 1f );
-    [SerializeField]
-    private float tentacleCooldown;
-    [SerializeField]
-    private int sporePerPickup = 2;
-    [SerializeField]
-    private int sporePenalty = 1;
-    [SerializeField]
-    private int slimeSporesToWin = 20;
-    [SerializeField]
-    private float tentacleAngleMin = 0f;
-    [SerializeField]
-    private float tentacleAngleMax = 45f;
 
-    private RaycastHit2D[] tempPhysicsCastHits = new RaycastHit2D[10];
-    private bool tentacleConnected;
-    private bool tentacleAvailable;
-    private float tentacleCooldownTime;
+	public bool TentacleAvailable { get; private set; }
+	public bool TentacleConnected { get; private set; }
+    public bool MOTAvailable => massOfTentaclesAvailable;
+    public bool MassOfTentacles => momentum >= massOfTentaclesCost;
+	public float Momentum { get => momentum;
+        set 
+        {
+            momentum = Mathf.Clamp( value, 0f, 1f );
+            MomentumChangedEvent?.Invoke( momentum, 1f );
+        } 
+    }
+
+    public Vector2 RuntimeMinVelocity { get => Vector2.Lerp( minVelocity, maxVelocity, momentum ); }
+    public bool TentacleLaunching { get; private set; }
+
+    public MOTController motController;
+
+    private List<Pickup> pickupConsumedFrameData = new List<Pickup>();
+    private List<float> momentumFrameData = new List<float>();
+    private List<bool> massOfTentaclesFrameData = new List<bool>();
+    private List<TentacleFrameData> tentacleFrameData = new List<TentacleFrameData>();
+    private List<DynamicFrameData> frameData = new List<DynamicFrameData>();
+    private List<TrailFrameData> trailFrameData = new List<TrailFrameData>();
+
     private InputManager inputManager;
-    private float averageVerticalVelocity;
-    private ContactPoint2D[] contacts = new ContactPoint2D[10];
-    private int slimeSpores;
-    private bool gameOver;
-    private Collider2D insideObstacle;
     private Animator animator;
+	private RaycastHit2D[] tempPhysicsCastHits = new RaycastHit2D[10];
+    private Vector3[] tempPos = new Vector3[2];
+    private Vector3[] tempPos2 = new Vector3[100];
+    private Vector3[] lastTrailPos;
+    private float tentacleCooldownTimer;
+    private int shieldCount;
+    private bool invulnerable;
+    private bool tentacleRush;
+    private bool massOfTentacles;
+    private float motTimer;
+    private float rmotTime;
+    private bool rewindingTime;
+    private float momentum;
+
+    private void Awake()
+    {
+        instance = this;
+        GameManager.RewindTimeInProgressEvent += OnRewindTimeEvent;
+        Input.simulateMouseWithTouches = false;
+        inputManager = new InputManager();
+        InputManager.PointerFirstheld += OnPointerFirstheld;
+        InputManager.PointerUp += OnPointerUp;
+        rb = GetComponent<Rigidbody2D>();
+        animator = GetComponent<Animator>();
+
+        motController = FindObjectOfType<MOTController>();
+        if (motController)
+        {
+            motController.ControllerPressed += OnMOTControllerPressed;
+            motController.ControllerReleased += StopMassOfTentacles;
+        }
+    }
 
     private void Start()
     {
-        if (Application.isEditor)
-        {
-            QualitySettings.vSyncCount = 0;
-            Application.targetFrameRate = 30;
-        }
-        Input.simulateMouseWithTouches = false;
-        inputManager = new InputManager( pointerHoldTime );
-        inputManager.PointerDown += OnPointerDown;
-        inputManager.PointerFirstheld += OnPointerFirstheld;
-        inputManager.PointerUp += OnPointerUp;
-        rb = GetComponent<Rigidbody2D>();
-        animator = GetComponent<Animator>();
-        rb.AddForce( startingVelocity, ForceMode2D.Impulse );
+        rb.velocity = startingVelocity;
+        rmotTime = motTime;
     }
+
+    private void OnDestroy()
+    {
+        GameManager.RewindTimeInProgressEvent -= OnRewindTimeEvent;
+        InputManager.PointerFirstheld -= OnPointerFirstheld;
+        InputManager.PointerUp -= OnPointerUp;
+    }
+    private void OnRewindTimeEvent( bool inProgress )
+    {
+        if (inProgress)
+        {
+            rewindingTime = true;
+            rb.simulated = false;
+        }
+        else
+        {
+            rewindingTime = false;
+            rb.simulated = true;
+            tentacleRenderer.enabled = false;
+            if (massOfTentacles)
+            {
+                massOfTentacles = false;
+                tentaclesManager?.QueueRetractAll();
+                trail.enabled = true;
+            }
+        }
+    }
+
     void Update()
     {
-        inputManager.ProcessInput();
-        if (!tentacleAvailable && Time.time >= tentacleCooldownTime)
-            TentacaleAvailable( true );
+        if (rewindingTime || GameManager.GamePaused)
+        {
+            return;
+        }
+
+        if (massOfTentacles)
+        {
+            motTimer += Time.deltaTime;
+            if (motTimer >= rmotTime)
+            {
+                rmotTime *= 0.5f;
+                motTimer = 0f;
+                Momentum -= massOfTentaclesCost;
+                if (Momentum <= 0f)
+                {
+                    rmotTime = motTime;
+                    motTimer = 0f;
+                    StopMassOfTentacles();
+                }
+            }
+        }
+        else
+        {
+            motTimer = 0f;
+            rmotTime = motTime;
+        }
+        inputManager?.ProcessInput();
+        if (tentacleCooldownTimer > 0f && !tentacleRush)
+            tentacleCooldownTimer -= Time.deltaTime;
+        if (!TentacleAvailable && tentacleCooldownTimer <= 0f)
+            SetTentacleAvailable( true );
+
+        if (!GameManager.IsGameOver && !GameManager.Deathmatch && transform.position.y >= GameManager.WinningDistance)
+        {
+            GameManager.GameOver( true );
+        }
+    }
+
+    private void RecordFrame()
+    {
+        if (frameData.Count > Mathf.Round( GameManager.RewindTime / Time.fixedDeltaTime ))
+        {
+            frameData.RemoveAt( frameData.Count - 1 );
+            tentacleFrameData.RemoveAt( tentacleFrameData.Count - 1 );
+            trailFrameData.RemoveAt( trailFrameData.Count - 1 );
+            massOfTentaclesFrameData.RemoveAt( massOfTentaclesFrameData.Count - 1 );
+            momentumFrameData.RemoveAt( momentumFrameData.Count - 1 );
+            pickupConsumedFrameData.RemoveAt( pickupConsumedFrameData.Count - 1 );
+        }
+        frameData.Insert( 0, new DynamicFrameData(rb.position, rb.velocity));
+
+        int n = trail.GetPositions( tempPos2 );
+        trailFrameData.Insert( 0, new TrailFrameData(n, tempPos2, trail.enabled ) );
+
+        tentacleRenderer.GetPositions( tempPos );
+        tentacleFrameData.Insert( 0, new TentacleFrameData( tentacleRenderer.enabled, tempPos) );
+
+        massOfTentaclesFrameData.Insert( 0, massOfTentacles );
+
+        momentumFrameData.Insert( 0, Momentum );
+
+        pickupConsumedFrameData.Insert( 0, null );
+    }
+
+    private void RewindFrame()
+    {
+        if (frameData.Count > 0)
+        {
+            transform.position = frameData[0].position;
+            rb.velocity = frameData[0].velocity;
+
+            lastTrailPos = trailFrameData[0].positions;
+            trail.enabled = trailFrameData[0].enabled;
+
+            tentacleRenderer.enabled = tentacleFrameData[0].enabled;
+            tentacleRenderer.SetPositions( tentacleFrameData[0].positions );
+
+            Momentum = momentumFrameData[0];
+
+            if (massOfTentacles != massOfTentaclesFrameData[0])
+            {
+                massOfTentacles = massOfTentaclesFrameData[0];
+                if (massOfTentacles)
+                    tentaclesManager.QueueEnable();
+                else
+                    tentaclesManager.QueueRetractAll();
+            }
+            pickupConsumedFrameData[0]?.RespawnByRewindTime();
+
+            pickupConsumedFrameData.RemoveAt( 0 );
+            momentumFrameData.RemoveAt( 0 );
+            trailFrameData.RemoveAt( 0 );
+            frameData.RemoveAt( 0 );
+            tentacleFrameData.RemoveAt( 0 );
+            massOfTentaclesFrameData.RemoveAt( 0 );
+        }
+    }
+
+    private void FollowPointer() 
+    {
+        if (motController != null && motController.gameObject.activeSelf)
+        {
+            Vector2 newVelocity = motController.ControllerAxis;
+            rb.velocity += newVelocity;
+            rb.velocity = Vector2.Lerp( rb.velocity, Vector2.zero, motController.Damping );
+            rb.velocity = Vector2.ClampMagnitude( rb.velocity, maxFreeVelocity );
+        }
+        else
+        {
+            Vector2 pointerPos = Camera.main.ScreenToWorldPoint( InputManager.CurrentPos.Value );
+            Vector2 controllerPos;
+            controllerPos = rb.position;
+
+            Vector2 direction = pointerPos - controllerPos;
+            if (direction.magnitude <= 0.5f)
+                direction = Vector2.zero;
+
+            var newForce = direction * followPointerMod;// * Time.deltaTime;
+            rb.velocity = newForce;
+            rb.velocity = Vector2.ClampMagnitude( rb.velocity, maxFreeVelocity );
+        }
+    }
+
+    private void StartMassOfTentacles()
+    {
+        if (!tentaclesManager)
+        {
+            Debug.LogError( "MassOfTentacles available, but tentacles manager not assigned" );
+            return;
+        }
+        trail.enabled = false;
+        tentaclesManager.QueueEnable();
+        massOfTentacles = true;
+
+        rb.gravityScale = 0f;
+        rb.velocity = Vector2.zero;
+
+        Momentum -= massOfTentaclesCost;
+    }
+
+    private void StopMassOfTentacles()
+    {
+        trail.enabled = true;
+        massOfTentacles = false;
+        if(tentaclesManager.gameObject.activeSelf)
+            tentaclesManager.QueueRetractAll();
+
+        rb.gravityScale = 1f;
+    }
+
+    private void LateUpdate()
+    {
+        if (rewindingTime && lastTrailPos != null)
+            trail.SetPositions( lastTrailPos );
+        if (invulnerable && !animator.GetCurrentAnimatorStateInfo( 0 ).IsName( "Damaged" ))
+        {
+            invulnerable = false;
+        }
     }
 
     private void FixedUpdate()
     {
-        if (tentacleConnected)
+        if (rewindingTime)
+        {
+            RewindFrame();
+            return;
+        }
+        else
+        {
+            RecordFrame();
+        }
+        if (massOfTentacles)
+        {
+            FollowPointer();
+        }
+        if (TentacleConnected)
         {
             tentacleRenderer.SetPosition( 0, rb.position );
         }
@@ -104,21 +357,18 @@ public class PlayerController : MonoBehaviour
         {
             velocity.x = Mathf.Sign( velocity.x ) * maxVelocity.x;
         }
-        if (Mathf.Abs( velocity.x ) < minVelocity.x)
+        if (Mathf.Abs( velocity.x ) < RuntimeMinVelocity.x)
         {
-            velocity.x = Mathf.Sign( velocity.x ) * minVelocity.x;
+            velocity.x = Mathf.Sign( velocity.x ) * RuntimeMinVelocity.x;
         }
 
-        velocity.y = Mathf.Clamp( velocity.y, minVelocity.y, maxVelocity.y );
+        velocity.y = Mathf.Clamp( velocity.y, RuntimeMinVelocity.y, maxVelocity.y );
         return velocity;
-    }
-
-    private void OnPointerDown(Vector3 pos )
-    {
     }
 
     IEnumerator LaunchTentacle(Vector2 targetPos, bool hit )
     {
+        TentacleLaunching = true;
         float startTime = Time.time;
         float time = Time.time - startTime;
         float distanceBias = Mathf.Min(Vector2.Distance( targetPos, rb.position ) / tentacleRange, 1f);
@@ -134,13 +384,13 @@ public class PlayerController : MonoBehaviour
 
         if (hit)
         {
-            TentacaleAvailable( false );
-            tentacleCooldownTime = Time.time + tentacleCooldown;
+            SetTentacleAvailable( false );
             var positions = new Vector3[] { rb.position, targetPos };
             tentacleRenderer.SetPositions( positions );
-            tentacleConnected = true;
+            TentacleConnected = true;
             tentacleAnchor.position = targetPos;
             tentaclejoint.enabled = true;
+            SoundManager.PlaySound( SoundManager.Sound.TentacleSwing );
 
             if (Mathf.Sign(rb.velocity.x) == Mathf.Sign( (targetPos - rb.position).x))
             {
@@ -151,13 +401,47 @@ public class PlayerController : MonoBehaviour
         {
             tentacleRenderer.enabled = false;
         }
+        TentacleLaunching = false;
+    }
+
+    private void OnMOTControllerPressed(Vector2 pos)
+    {
+        if (massOfTentaclesAvailable && !massOfTentacles && momentum >= massOfTentaclesCost)
+        {
+            StartMassOfTentacles();
+            return;
+        }
     }
 
     private void OnPointerFirstheld( Vector3 pos )
     {
-        if (!tentacleAvailable)
+        if (massOfTentacles)
             return;
+        if ((!motController || !motController.gameObject.activeSelf) && massOfTentaclesAvailable && !massOfTentacles && momentum >= massOfTentaclesCost)
+        {
+            Vector2 pointerPos = Camera.main.ScreenToWorldPoint( pos );
+            Vector2 controllerPos = transform.position;
+            float distance = Vector2.Distance( pointerPos, controllerPos );
+            if (distance <= motStartRange)
+            {
+                StartMassOfTentacles();
+                return;
+            }
+        }
 
+        if (!TentacleAvailable)
+        {
+            if (tentacleRushAvailable && Momentum >= tentacleRushCost)
+            {
+                Momentum = Momentum - tentacleRushCost;
+                tentacleRush = true;
+            }
+            else
+            {
+                tentacleRush = false;
+                return;
+            }
+        }
         if (rb.velocity.x >= 0)
         {
             tentacleDirection.x = -1f;
@@ -174,21 +458,39 @@ public class PlayerController : MonoBehaviour
 
     private void OnPointerUp( Vector3 pos )
     {
-        if (inputManager.PointerHeld)
+        if (massOfTentacles)
+        {
+            StopMassOfTentacles();
+            return;
+        }
+        if (inputManager.PointerHeld && TentacleConnected)
         {
             ReleaseTentacle();
+            SetTentacleAvailable( false );
         }
     }
 
     private void ReleaseTentacle()
     {
-        tentacleConnected = false;
+        TentacleConnected = false;
         tentacleRenderer.enabled = false;
         tentaclejoint.enabled = false;
+        TentacleLaunching = false;
         StopCoroutine( "LaunchTentacle" );
+    }
+
+    private void SetTentacleAvailable(bool value)
+    {
+        tentacleCooldownTimer = value ? 0f : tentacleCooldown;
+        TentacleAvailable = value;
+        animator?.SetBool( "HideTentacle", !TentacleAvailable );
     }
     private void OnCollisionEnter2D( Collision2D collision )
     {
+        if (massOfTentacles || rewindingTime)
+        {
+            return;
+        }
         Vector2 newVelocity = -collision.relativeVelocity;
 
         if (inputManager.PointerHeld)
@@ -200,124 +502,116 @@ public class PlayerController : MonoBehaviour
         {
             WallBounceEvent?.Invoke( (int) Mathf.Sign( newVelocity.x ));
             newVelocity.x *= -1f;
+            SoundManager.PlaySound( SoundManager.Sound.Bounce );
         }
 
-        TentacaleAvailable( true );
+        tentacleRush = false;
+        SetTentacleAvailable( true );
         newVelocity = ClampVelocity( newVelocity );
         rb.velocity = newVelocity;
     }
 
-    IEnumerator GameOver(bool victory )
-    {
-        Debug.Log( "GameOver sequence start" );
-        yield return new WaitForSeconds( 0.25f );
-
-        Debug.Log( "GameOver sequence done" );
-        if (victory)
-        {
-            GameManager.Victory();
-        }
-        else
-        {
-            GameManager.GameOver();
-        }
-    }
-
-    private void TentacaleAvailable(bool value)
-    {
-        tentacleAvailable = value;
-        animator?.SetBool( "HideTentacle", !tentacleAvailable );
-    }
-    private void OnTriggerExit( Collider other )
-    {
-        if (insideObstacle && other == insideObstacle)
-        {
-            insideObstacle = null;
-        }
-    }
     private void OnTriggerEnter2D( Collider2D collision )
     {
-        if (gameOver)
+        if (GameManager.IsGameOver || rewindingTime)
             return;
-
-        if (!insideObstacle)
-        {
-            insideObstacle = collision;
-        }
 
         if (collision.CompareTag( "Lava" ))
         {
-            gameOver = true;
-            Debug.Log( "GameOver" );
-            StartCoroutine( GameOver( false ) );
+            GameManager.GameOver( false );
             return;
         }
 
         if (collision.gameObject.CompareTag( "Obstacle" ))
         {
-            if (insideObstacle == collision)
-            {
-                return;
-            }
-            if (inputManager.PointerHeld)
+            if (TentacleConnected)
             {
                 ReleaseTentacle();
-                TentacaleAvailable( true );
             }
-            Vector2 newVelocity = rb.velocity;
+            if (massOfTentacles)
+            {
+                StopMassOfTentacles();
+            }
+            SetTentacleAvailable( true );
+            Vector2 newVelocity = collision.transform.parent.localScale.normalized;
+            newVelocity *= rb.velocity.magnitude;
             rb.velocity = Vector2.zero;
-            collision.GetContacts( contacts );
-            newVelocity.x = -newVelocity.x;
-            newVelocity *= obstacleVelocityPenalty;
-            rb.velocity = newVelocity;
-            slimeSpores -= sporePenalty;
 
-            OnTakeDamage();
-            loseSporeParticles.Play();
-        }
-
-        if (collision.CompareTag("Debris"))
-        {
-            if (inputManager.PointerHeld)
+            if (shieldCount > 0)
             {
-                ReleaseTentacle();
+                shieldCount--;
+                SoundManager.PlaySound( SoundManager.Sound.Bounce );
             }
-
-            var v = rb.velocity;
-            v.y *= obstacleVelocityPenalty;
-            rb.velocity = v;
-            slimeSpores -= sporePenalty;
-
-            OnTakeDamage();
-            loseSporeParticles.Play();
-        }
-        else if (collision.CompareTag( "SlimeSpore" ))
-        {
-            TentacaleAvailable( true );
-            slimeSpores += sporePerPickup;
-
-            var s = collision.GetComponentInParent<Spawnable>();
-            s?.ReturnToPool();
-            gainSporeParticles.Play();
+            else if(!invulnerable)
+            {
+                newVelocity *= obstacleVelocityPenalty;
+                OnTakeDamage();
+                loseSporeParticles.Play();
+            }
+            WallBounceEvent( (int) -Mathf.Sign(collision.transform.localScale.x) );
+            rb.velocity = newVelocity;
+            tentacleRush = false;
         }
 
-        slimeSpores = Mathf.Clamp( slimeSpores, 0, slimeSporesToWin );
-        slimeSporeLable.UpdateText( ((100 * slimeSpores) / slimeSporesToWin).ToString() );
-
-        if (slimeSpores == slimeSporesToWin)
+        if (collision.CompareTag("Debris") || collision.CompareTag("FloatingCrystal"))
         {
-            StartCoroutine( GameOver( true ) );
-            return;
+            if (shieldCount > 0)
+            {
+                shieldCount--;
+            }
+            else if(!invulnerable)
+            {
+                if (TentacleConnected)
+                {
+                    ReleaseTentacle();
+                    SetTentacleAvailable( false );
+                    tentacleCooldownTimer *= 0.33f;
+                }
+
+                if (massOfTentacles)
+                {
+                    StopMassOfTentacles();
+                }
+
+                var v = rb.velocity;
+                v.y *= obstacleVelocityPenalty;
+                rb.velocity = v;
+
+                OnTakeDamage();
+                loseSporeParticles.Play();
+            }
+            tentacleRush = false;
+        }
+
+        ShieldCountChangedEvent?.Invoke( shieldCount );
+        if (shieldCount > 0)
+        {
+            shield.SetActive( true );
+        }
+        else
+        {
+            shield.SetActive( false );
         }
     }
+
+    public void AbsorbPickup(Pickup pickup)
+    {
+        if (rewindingTime)
+            return;
+        pickupConsumedFrameData.Insert( 0, pickup );
+        SetTentacleAvailable( true );
+        gainSporeParticles.Play();
+        SoundManager.PlaySound( SoundManager.Sound.Pickup );
+        PickupEvent?.Invoke();
+    }
+
     private void OnTakeDamage()
     {
+        Momentum = Momentum - momentumPenaltyOnDamage;
+        ObstacleCollisionEvent?.Invoke();
         animator.SetTrigger( "Damaged" );
-    }
-    private void SetTimeScale(float scale )
-    {
-        Time.timeScale = scale;
-        Time.fixedDeltaTime = 0.02f * Time.timeScale;
+        SoundManager.PlaySound( SoundManager.Sound.ObstacleCollision );
+        invulnerable = true;
     }
 
     private Vector2? GetRaycastHitPoint(Vector2 direction, float range)
@@ -341,6 +635,20 @@ public class PlayerController : MonoBehaviour
             }
         }
         return null;
+    }
+    public void BoostShield(int boost )
+    {
+        shieldCount++;
+        shieldCount = Mathf.Clamp( shieldCount, 0, 3 );
+        ShieldCountChangedEvent?.Invoke( shieldCount );
+        if (shieldCount > 0)
+        {
+            shield.SetActive( true );
+        }
+        else
+        {
+            shield.SetActive( false );
+        }
     }
 
     private void OnDrawGizmosSelected()
