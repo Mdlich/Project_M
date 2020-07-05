@@ -28,6 +28,7 @@ public class ScoreManager
 		{
 			GameServicesManager.UnlockAchievement( SlimeAscentResources.achievement_in_one_go );
 		}
+
 		if (sceneName == AmetystCaveScene)
 		{
 			GameServicesManager.UnlockAchievement( SlimeAscentResources.achievement_amethyst_caves_complete );
@@ -44,14 +45,17 @@ public class ScoreManager
 		else if (sceneName == AmetystCaveDeathmatchScene)
 		{
 			GameServicesManager.SubmitScore( SlimeAscentResources.leaderboard_amethyst_cave_top_height, GetScore() );
+			Debug.Log( $"Amethyst cave score submitted: {GetScore()}" );
 		}
 		else if (sceneName == SapphireCaveDeathmatchScene)
 		{
 			GameServicesManager.SubmitScore( SlimeAscentResources.leaderboard_sapphire_cave_top_height, GetScore() );
+			Debug.Log( $"sapphire_cave score submitted: {GetScore()}" );
 		}
 		else if (sceneName == EmeraldCaveDeathmatchScene)
 		{
 			GameServicesManager.SubmitScore( SlimeAscentResources.leaderboard_emerald_cave_top_height, GetScore() );
+			Debug.Log( $"emerald_cave score submitted: {GetScore()}" );
 		}
 	}
 }

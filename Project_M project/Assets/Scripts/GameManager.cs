@@ -267,7 +267,7 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSecondsRealtime( 0.25f );
         int index = SceneManager.GetActiveScene().buildIndex;
-        if (victory)
+        if (victory || index > 3)
         {
             ScoreManager.UpdateAchievements( SceneManager.GetActiveScene().name );
             SoundManager.PlaySound( SoundManager.Sound.Victory );
